@@ -1,0 +1,212 @@
+
+import os
+
+from openpyxl import Workbook, load_workbook
+
+
+class CommandProcessor:
+
+    def get_command(self):
+        print("1. ثبت عملیات")
+        print("2. گزارش")
+        print("3. نمودار")
+        print("4. خروج")
+        choice = input("What do you want to do? ")
+
+        return choice
+
+    def get_data(self):
+        operation_type = input("نوع عملیات (درآمد/هزینه): ")
+
+        date = input("تاریخ: ")
+
+        amount = int(input("مقدار را وارد کنید: "))
+
+        reason = input("دلیل را وارد کنید: ")
+
+        if operation_type == "هزینه":
+            amount = -amount
+
+        elif operation_type == "درآمد":
+            amount = amount
+
+        return amount, reason, date, operation_type
+
+
+class ExcelManager:
+
+    def write_to_excel(self, amount, reason, date, operation_type):
+
+        if os.path.exists("data.xlsx"):
+            workbook = load_workbook("data.xlsx")
+
+        else:
+            workbook = Workbook()
+
+        sheet = workbook.active
+
+        row = sheet.max_row + 1
+
+        sheet.cell(row=row, column=1, value=amount)
+
+        sheet.cell(row=row, column=2, value=reason)
+
+        sheet.cell(row=row, column=3, value=date)
+
+        sheet.cell(row=row, column=4, value=operation_type)
+
+        workbook.save("data.xlsx")
+
+        os.startfile("data.xlsx")
+
+
+class FilterManager:
+
+    def read_from_excel(self):
+        workbook = load_workbook("data.xlsx")
+
+        sheet = workbook.active
+
+        operations = []
+
+        for row in sheet.iter_rows(values_only=True):
+            operations.append(row)
+
+        return operations
+
+    def filter_by_type(self, operations, operation_type):
+
+        list_filtered = []
+
+        for operation in operations:
+
+            if operation[3] == operation_type:
+
+                list_filtered.append(operation)
+
+        return list_filtered
+
+    def filter_by_date(self, operations, date):
+
+        list_filtered = []
+
+        for operation in operations:
+
+            if operation[2] == date:
+
+                list_filtered.append(operation)
+
+        return list_filtered
+
+    def filter_by_date_range(self, operations, start_date, end_date):
+
+        list_filtered = []
+
+        for operation in operations:
+
+            if start_date <= operation[2] <= end_date:
+
+                list_filtered.append(operation)
+
+        return list_filtered
+
+
+class BudgetManager:
+
+    def calculate_income(self, operations):
+
+        total_income = 0
+
+        for operation in operations:
+
+            if operation[3] == "درآمد":
+
+                total_income += operation[0]
+
+        return total_income
+
+    def calculate_expense(self, operations):
+
+        total_expense = 0
+
+        for operation in operations:
+
+            if operation[3] == "هزینه":
+
+                total_expense += operation[0] * -1
+
+        return total_expense
+
+    def calculate_balance(self, operations):
+
+        income = self.calculate_income(operations)
+
+        expense = self.calculate_expense(operations)
+
+        balance = income - expense
+
+        return balance
+
+    def count_operations(self, operations):
+
+        count = 0
+
+        for operation in operations:
+
+            count += 1
+
+        return count
+
+
+class reportmanager:
+
+    class ReportManager:
+
+        def get_report_type(self):
+            print("1. گزارش خلاصه")
+            print("2. گزارش یک تاریخ")
+            print("3. گزارش بین دو تاریخ")
+            print("4. گزارش درآمدها")
+            print("5. گزارش هزینه‌ها")
+
+            choice = input("چه گزارشی می‌خواهید؟ ")
+
+            return choice
+
+
+processor = CommandProcessor()
+
+choice = processor.get_command()
+
+if choice == "1":
+
+    amount, reason, date, operation_type = processor.get_data()
+
+    excel = ExcelManager()
+
+    excel.write_to_excel(amount, reason, date, operation_type)
+
+elif choice == "2":
+
+    filter_manager = FilterManager()
+
+    operations = filter_manager.read_from_excel()
+
+    budget_manager = BudgetManager()
+
+    income = budget_manager.calculate_income(operations)
+
+    expense = budget_manager.calculate_expense(operations)
+
+    balance = budget_manager.calculate_balance(operations)
+
+    count = budget_manager.count_operations(operations)
+
+    print("Income:", income)
+    print("Expense:", expense)
+    print("Balance:", balance)
+    print("Count:", count)
+
+elif choice == "4":
+
+    print("خروج از برنامه")
